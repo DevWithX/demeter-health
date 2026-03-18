@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const API_KEY = "YOUR_KEY_HERE";
+const GEOAPIFY_API_KEY = "GEOAPIFY_API_KEY";
 
 const PERSONAS = [
   {
@@ -61,10 +62,46 @@ export default function DemeterHealth() {
   const [isLoading, setIsLoading] = useState(false);
   const [plan, setPlan] = useState(null);
   const [chatInput, setChatInput] = useState("");
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const suggestionsRef = useRef(null);
 
   const persona = PERSONAS.find((p) => p.id === selectedPersona);
+
+  const fetchLocationSuggestions = async (query) => {
+    if (!query.trim() || query.length < 2) {
+      setLocationSuggestions([]);
+      return;
+    }
+    setLocationLoading(true);
+    try {
+      const response = await fetch(
+        `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(query)}&limit=5&apiKey=${GEOAPIFY_API_KEY}`
+      );
+      const data = await response.json();
+      console.log("Full API Response:", data);
+      
+      const suggestions = data.features?.map((feature) => {
+        const props = feature.properties;
+        return {
+          formatted: props.formatted || `${props.city}, ${props.country}`,
+          city: props.city,
+          country: props.country,
+          lat: feature.geometry.coordinates[1],
+          lon: feature.geometry.coordinates[0],
+        };
+      }) || [];
+      console.log("Parsed suggestions:", suggestions);
+      setLocationSuggestions(suggestions);
+    } catch (error) {
+      console.error("Error fetching location suggestions:", error);
+      setLocationSuggestions([]);
+    }
+    setLocationLoading(false);
+  };
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
   useEffect(() => { if (phase === "onboarding") inputRef.current?.focus(); }, [phase, currentStep]);
@@ -90,6 +127,12 @@ export default function DemeterHealth() {
     setSelectedPersona(personaId);
     setPhase("onboarding");
     setCurrentStep(0);
+  };
+
+  const handleLocationSelect = (suggestion) => {
+    setInputValue(suggestion.formatted);
+    setShowLocationSuggestions(false);
+    setLocationSuggestions([]);
   };
 
   const handleOnboardingSubmit = async () => {
@@ -232,6 +275,46 @@ export default function DemeterHealth() {
               <div>
                 <textarea ref={inputRef} value={inputValue} onChange={e=>setInputValue(e.target.value)} placeholder={step.placeholder} rows={4} className="ifield w-full px-4 py-3 rounded-xl text-white placeholder-gray-700 text-sm resize-none" onKeyDown={e=>e.key==="Enter"&&e.ctrlKey&&handleOnboardingSubmit()} />
                 <button onClick={handleOnboardingSubmit} className="mt-4 px-8 py-3 rounded-xl text-black font-medium text-sm" style={{background:persona?.accent}}>Generate My Plan</button>
+              </div>
+            ) : step.key === "location" ? (
+              <div className="relative" onMouseLeave={() => setShowLocationSuggestions(false)}>
+                <div className="flex gap-3">
+                  <div className="flex-1 relative">
+                    <input 
+                      ref={inputRef} 
+                      type="text" 
+                      value={inputValue} 
+                      onChange={e => {
+                        setInputValue(e.target.value);
+                        setShowLocationSuggestions(true);
+                        fetchLocationSuggestions(e.target.value);
+                      }} 
+                      onFocus={() => inputValue.length > 0 && setShowLocationSuggestions(true)}
+                      placeholder={step.placeholder} 
+                      className="ifield w-full px-4 py-3 rounded-xl text-white placeholder-gray-700 text-sm" 
+                      onKeyDown={e => e.key === "Enter" && handleOnboardingSubmit()} 
+                    />
+                    {locationLoading && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 text-xs">Loading...</span>}
+                  </div>
+                  <button onClick={handleOnboardingSubmit} className="px-5 py-3 rounded-xl text-black font-medium" style={{background:persona?.accent}}>→</button>
+                </div>
+                {showLocationSuggestions && locationSuggestions.length > 0 && (
+                  <div ref={suggestionsRef} className="absolute top-full left-0 right-0 mt-2 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden z-50">
+                    {locationSuggestions.map((suggestion, idx) => (
+                      <button
+                        key={idx}
+                        onMouseDown={e => {
+                          e.preventDefault();
+                          handleLocationSelect(suggestion);
+                        }}
+                        className="w-full text-left px-4 py-3 text-gray-300 text-sm hover:bg-gray-800 hover:text-white transition-colors border-b border-gray-800 last:border-b-0"
+                      >
+                        <p className="font-medium">{suggestion.city || suggestion.formatted}</p>
+                        <p className="text-xs text-gray-500">{suggestion.country}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex gap-3">
