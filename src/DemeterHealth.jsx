@@ -3,7 +3,7 @@ import ExerciseDemo from './ExerciseDemo';
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const API_KEY = "YOUR_KEY_HERE";
-const GEOAPIFY_API_KEY = "YOUR_GEOAPIFY_KEY_HERE";
+const GEOAPIFY_API_KEY = "47adf4ab9449445a956c31f28c37bf2f";
 
 const PERSONAS = [
   { id: "hype", name: "The Hype Coach", emoji: "🔥", description: "High energy, motivational, will not let you slack", systemPrompt: "You are a high-energy, intensely motivational fitness coach named Coach Blaze. Use energetic language, occasional ALL CAPS. Be like a best friend who is also a personal trainer. Always medically responsible. Keep responses concise and actionable. Always give a helpful response no matter what.", accent: "#00c864" },
@@ -278,7 +278,7 @@ Exercises or foods to avoid. If no conditions were reported, give general safety
       if (msg.includes("diet") || msg.includes("eat") || msg.includes("food")) fallback = "Great question about nutrition. Focus on whole foods, lean protein with every meal, and your local staples. Avoid heavily processed foods. What specific dietary question do you have?";
       if (msg.includes("exercise") || msg.includes("workout") || msg.includes("train")) fallback = "For training - start with compound movements like squats, push-ups and rows. Focus on form over weight. 2-3 days per week is enough to start. What specific exercise are you asking about?";
       if (msg.includes("pain") || msg.includes("injury") || msg.includes("hurt")) fallback = "If you are experiencing pain, please stop that exercise immediately and consult a doctor or physiotherapist before continuing. Never push through sharp pain.";
-      if (msg.includes("motivat") || msg.includes("tired") || msg.includes("give up")) fallback = "Rest days are part of the process. Progress is not always linear. The fact that you are here and asking questions puts you ahead of most people. What is making things feel difficult right now?";
+      if (msg.includes("motivate") || msg.includes("tired") || msg.includes("give up")) fallback = "Rest days are part of the process. Progress is not always linear. The fact that you are here and asking questions puts you ahead of most people. What is making things feel difficult right now?";
       if (msg.includes("weight") || msg.includes("lose") || msg.includes("fat")) fallback = "Weight loss comes down to a caloric deficit combined with adequate protein to preserve muscle. Focus on sustainable habits rather than extreme diets. Small consistent changes beat big short-term efforts every time.";
       setMessages([...newMessages, { role: "assistant", content: fallback }]);
     }
@@ -364,7 +364,7 @@ Exercises or foods to avoid. If no conditions were reported, give general safety
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full opacity-10" style={{background:"radial-gradient(circle,#00c864,transparent 70%)",filter:"blur(60px)"}}/>
       <div className="relative z-10 text-center px-6">
         <div className="a1">
-          <p className="text-xs tracking-widest text-green-500 uppercase mb-6">Your Personal Health Companion</p>
+<p className="text-xs tracking-widest text-green-500 uppercase mb-6">Your Personal Health Companion</p>
           <h1 className="title text-8xl font-light text-white leading-none">Demeter<span style={{color:"#00c864"}}>.</span></h1>
           <p className="title text-2xl font-light text-gray-500 mt-1 tracking-widest">HEALTH</p>
         </div>
