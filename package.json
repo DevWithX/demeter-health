@@ -17,7 +17,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "server": "node --env-file-if-exists=.env server/index.mjs",
+    "test:server": "node --test server/*.test.mjs"
   },
   "eslintConfig": {
     "extends": [
@@ -36,5 +38,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "proxy": "http://127.0.0.1:3001",
+  "engines": {
+    "node": ">=22.13"
   }
 }

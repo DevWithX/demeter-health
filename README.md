@@ -1,62 +1,60 @@
 # Demeter Health
 
-A personalised AI fitness and nutrition app that adapts to your body, your health conditions, and the food available where you live.
+A React fitness-coaching prototype with guided onboarding, four coach personas,
+local profile storage, and Three.js exercise demonstrations. AI and location
+requests go through a small Node API; provider credentials never enter the browser bundle.
 
-## Features
+## Run locally
 
-- AI-powered fitness plan generation via Claude API
-- Localised diet planning based on your geographic location
-- 4 customisable AI coach personas
-- Interactive 3D exercise demonstrations with muscle highlighting
-- Metric and imperial unit support
-- Geoapify-powered location autocomplete
-- Profile persistence across sessions
-- BMI calculator
-- Offline fallback mode
+Requires Node 22.13 or newer.
 
-## Tech Stack
-
-- React (Create React App)
-- Tailwind CSS
-- Three.js (3D visualisations)
-- Anthropic Claude API
-- Geoapify Geocoding API
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- Anthropic API key
-- Geoapify API key
-
-### Installation
-
-```bash
-git clone https://github.com/DevWithX/demeter-health.git
-cd demeter-health
-npm install
+```sh
+npm ci
+cp .env.example .env
+# Set your own provider keys in .env, then start the API:
+npm run server
 ```
 
-### Environment Variables
+In a second terminal, run `npm start` and open http://localhost:3000.
+The development server forwards `/api` to the loopback API on port 3001.
+Without provider keys, onboarding and exercise demonstrations remain available;
+AI requests show an unavailable state. Location can be entered manually.
 
-Create a `.env` file in the root:
-
-```
-REACT_APP_ANTHROPIC_KEY=your_key_here
-REACT_APP_GEOAPIFY_KEY=your_key_here
-```
-
-### Run locally
-
-```bash
-npm start
+```sh
+npm run test:server
+CI=true npm test -- --watchAll=false
+npm run build
 ```
 
-## Live Demo
+## Architecture and boundaries
 
-[demeter-health.vercel.app](https://demeter-health.vercel.app)
+- React owns onboarding, coach selection, unit conversion, and the exercise viewer.
+- The Node API validates payloads, limits request size and frequency, applies timeouts,
+  and keeps Anthropic/Geoapify credentials server-side.
+- Profiles stay in this browser's local storage. Clearing the saved profile removes
+  that local record. AI requests send the entered profile and messages to Anthropic;
+  location searches send the typed location to Geoapify.
+- An upstream outage never substitutes a generic programme and calls it personalised.
+- This is a wellness prototype, not a clinical service or a validated treatment tool.
 
-## Screenshots
+## Deployment
 
-(Add screenshots here after deployment)
+The included API binds to loopback. To deploy, serve the built React files and proxy
+`/api` through the same HTTPS origin to the API; set `ALLOWED_ORIGIN` accordingly.
+Before offering paid-provider access publicly, add user authentication, per-user
+quotas and a shared rate limiter. The current in-memory limiter is per process and
+is intended for local development. Do not deploy only the static build and expect
+AI features to work.
+
+## Credential hygiene
+
+A geocoding key was previously committed. It must be revoked/rotated in Geoapify;
+removing it from current source does not remove it from Git history. Keep replacement
+keys only in `.env` or deployment secrets. Never put them in `REACT_APP_*` variables.
+
+## Next improvements
+
+- Authenticated deployment and durable usage quotas.
+- Explicit opt-in for saving profiles on shared devices.
+- Accessibility review and broader end-to-end onboarding coverage.
+- Evaluation of generated responses before use outside a prototype.

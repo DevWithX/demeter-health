@@ -158,7 +158,7 @@ function buildAnatomicalFigure(scene) {
   };
 
   // HEAD
-  const head = addPart(new THREE.SphereGeometry(0.19, 20, 20), SKIN, 0, 1.74, 0, 0, 0, 0, "head");
+  addPart(new THREE.SphereGeometry(0.19, 20, 20), SKIN, 0, 1.74, 0, 0, 0, 0, "head");
   // subtle face features
   addPart(new THREE.SphereGeometry(0.04, 8, 8), SKIN_DARK, -0.07, 1.78, 0.16, 0, 0, 0); // left eye socket
   addPart(new THREE.SphereGeometry(0.04, 8, 8), SKIN_DARK, 0.07, 1.78, 0.16, 0, 0, 0); // right eye socket
@@ -177,8 +177,8 @@ function buildAnatomicalFigure(scene) {
   const pelvis = addPart(new THREE.CylinderGeometry(0.24, 0.2, 0.2, 14), SKIN, 0, 0.76, 0, 0, 0, 0, "rear-hip");
 
   // SHOULDERS
-  const lShoulder = addPart(new THREE.SphereGeometry(0.115, 14, 14), SKIN, -0.33, 1.38, 0, 0, 0, 0, "shoulder");
-  const rShoulder = addPart(new THREE.SphereGeometry(0.115, 14, 14), SKIN, 0.33, 1.38, 0, 0, 0, 0, "shoulder");
+  addPart(new THREE.SphereGeometry(0.115, 14, 14), SKIN, -0.33, 1.38, 0, 0, 0, 0, "shoulder");
+  addPart(new THREE.SphereGeometry(0.115, 14, 14), SKIN, 0.33, 1.38, 0, 0, 0, 0, "shoulder");
 
   // UPPER ARMS
   const lUpperArm = addPart(new THREE.CylinderGeometry(0.075, 0.065, 0.36, 12), SKIN, -0.44, 1.13, 0, 0, 0, 0.18, "rear-upper-arm");
@@ -354,7 +354,6 @@ export default function ExerciseDemo() {
   const [activeMuscle, setActiveMuscle] = useState(null);
   const accent = selectedEx.color;
 
-  const allMuscles = [...selectedEx.muscles.primary, ...selectedEx.muscles.secondary];
 
   const styles = `
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500&display=swap');

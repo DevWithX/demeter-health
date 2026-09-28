@@ -1,10 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import ExerciseDemo from './ExerciseDemo';
 
-const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
-const API_KEY = "YOUR_KEY_HERE";
-const GEOAPIFY_API_KEY = "47adf4ab9449445a956c31f28c37bf2f";
-
 const PERSONAS = [
   { id: "hype", name: "The Hype Coach", emoji: "🔥", description: "High energy, motivational, will not let you slack", systemPrompt: "You are a high-energy, intensely motivational fitness coach named Coach Blaze. Use energetic language, occasional ALL CAPS. Be like a best friend who is also a personal trainer. Always medically responsible. Keep responses concise and actionable. Always give a helpful response no matter what.", accent: "#00c864" },
   { id: "calm", name: "The Zen Guide", emoji: "🧘", description: "Calm, measured, science-based approach", systemPrompt: "You are a calm, thoughtful wellness coach named Sage. Deep knowledge of sports science and nutrition. Measured reassuring tones. Ground advice in evidence. Warm but concise. Always medically responsible. Always give a helpful response no matter what.", accent: "#60a5fa" },
@@ -18,6 +14,19 @@ const cmToFeet = (cm) => Math.floor(cm / 30.48);
 const cmToRemInches = (cm) => Math.round((cm / 2.54) % 12);
 const kgToLbs = (kg) => Math.round(parseFloat(kg) * 2.205 * 10) / 10;
 const lbsToKg = (lbs) => Math.round(parseFloat(lbs) / 2.205 * 10) / 10;
+
+const ONBOARDING_STEPS = [
+    { key: "name", question: "First things first - what is your name?", type: "text", placeholder: "Your name..." },
+    { key: "age", question: "How old are you?", type: "number", placeholder: "e.g. 25", unit: "years", min: 5, max: 120 },
+    { key: "height", question: "What is your height?", type: "height", placeholderCm: "e.g. 175", min: 90, max: 245 },
+    { key: "weight", question: "And your current weight?", type: "weight", placeholderMetric: "e.g. 70", placeholderImperial: "e.g. 154" },
+    { key: "location", question: "Where are you based?", type: "location", placeholder: "Start typing a city or country..." },
+    { key: "goal", question: "What is your main fitness goal?", type: "select", options: ["Lose weight", "Build muscle", "Improve endurance", "Stay active and healthy", "Recover from injury", "Sport-specific training"] },
+    { key: "ailments", question: "Any health conditions, injuries, or disorders?", type: "text", placeholder: "e.g. diabetes, lower back pain, asthma", optional: true, hint: "Separate multiple conditions with commas. This helps us tailor your plan safely." },
+    { key: "experience", question: "What is your current fitness level?", type: "select", options: ["Complete beginner", "Some experience (less than 1 year)", "Intermediate (1-3 years)", "Advanced (3+ years)"] },
+    { key: "daysPerWeek", question: "How many days per week can you commit to training?", type: "select", options: ["1-2 days", "3-4 days", "5-6 days", "Every day"] },
+    { key: "freeForm", question: "Anything else you want us to know?", type: "textarea", placeholder: "Your ideal routine, what you love or hate, any other preferences...", optional: true, hint: "Completely optional - but the more you share, the more personalised your plan will be." },
+  ];
 
 export default function DemeterHealth() {
   const [phase, setPhase] = useState("splash");
@@ -47,18 +56,7 @@ export default function DemeterHealth() {
 
   const persona = PERSONAS.find((p) => p.id === selectedPersona);
 
-  const ONBOARDING_STEPS = [
-    { key: "name", question: "First things first - what is your name?", type: "text", placeholder: "Your name..." },
-    { key: "age", question: "How old are you?", type: "number", placeholder: "e.g. 25", unit: "years", min: 5, max: 120 },
-    { key: "height", question: "What is your height?", type: "height", placeholderCm: "e.g. 175", min: 90, max: 245 },
-    { key: "weight", question: "And your current weight?", type: "weight", placeholderMetric: "e.g. 70", placeholderImperial: "e.g. 154" },
-    { key: "location", question: "Where are you based?", type: "location", placeholder: "Start typing a city or country..." },
-    { key: "goal", question: "What is your main fitness goal?", type: "select", options: ["Lose weight", "Build muscle", "Improve endurance", "Stay active and healthy", "Recover from injury", "Sport-specific training"] },
-    { key: "ailments", question: "Any health conditions, injuries, or disorders?", type: "text", placeholder: "e.g. diabetes, lower back pain, asthma", optional: true, hint: "Separate multiple conditions with commas. This helps us tailor your plan safely." },
-    { key: "experience", question: "What is your current fitness level?", type: "select", options: ["Complete beginner", "Some experience (less than 1 year)", "Intermediate (1-3 years)", "Advanced (3+ years)"] },
-    { key: "daysPerWeek", question: "How many days per week can you commit to training?", type: "select", options: ["1-2 days", "3-4 days", "5-6 days", "Every day"] },
-    { key: "freeForm", question: "Anything else you want us to know?", type: "textarea", placeholder: "Your ideal routine, what you love or hate, any other preferences...", optional: true, hint: "Completely optional - but the more you share, the more personalised your plan will be." },
-  ];
+
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -105,7 +103,7 @@ export default function DemeterHealth() {
     setLocationLoading(true);
     locationTimeout.current = setTimeout(async () => {
       try {
-        const res = await fetch(`https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(val)}&limit=6&apiKey=${GEOAPIFY_API_KEY}`);
+        const res = await fetch(`/api/location?text=${encodeURIComponent(val)}`);
         const data = await res.json();
         if (data.features) {
           const suggestions = data.features.map(f => {
@@ -201,10 +199,11 @@ export default function DemeterHealth() {
   const callClaude = async (userMessages, systemOverride = null) => {
     const system = systemOverride || persona?.systemPrompt + " IMPORTANT: Always be medically responsible. Never recommend anything harmful. For users over 65 or with serious conditions, recommend consulting a doctor first. Diet plans MUST use locally available foods. Be concise and helpful. Always give a response.";
     try {
-      const response = await fetch(ANTHROPIC_API_URL, {
+      const response = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": API_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-        body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 1500, system, messages: userMessages }),
+        headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(30000),
+        body: JSON.stringify({ system, messages: userMessages }),
       });
       if (!response.ok) throw new Error("API error " + response.status);
       const data = await response.json();
@@ -252,8 +251,8 @@ Exercises or foods to avoid. If no conditions were reported, give general safety
       setPlan(response);
       setMessages([{ role: "assistant", content: "Here is your personalised plan, " + data.name + "! Feel free to ask me to adjust anything - swap exercises, change foods, explain something, or modify based on how you feel." }]);
     } catch {
-      setPlan("## FITNESS PROGRAMME\nMonday: Push Day - 3x12 Push-ups, 3x10 Dips, 3x12 Shoulder Press\nWednesday: Pull Day - 3x8 Pull-ups, 3x12 Rows, 3x12 Bicep Curls\nFriday: Leg Day - 3x15 Squats, 3x12 Lunges, 3x15 Calf Raises\nSaturday: 30 min cardio - jog, walk, or cycle\n\n## DIET PLAN\nBreakfast: Oats with banana and peanut butter\nLunch: Rice, grilled chicken, and steamed vegetables\nDinner: Pap, spinach, and grilled fish or beans\nSnacks: Fresh fruit, mixed nuts, or yoghurt\n\n## SUPPLEMENTS AND HEALTH NOTES\nConsider Vitamin D3 and Omega-3. Always consult your doctor before starting supplements.\n\n## IMPORTANT WARNINGS\nStay hydrated - drink at least 2 litres of water daily. Stop any exercise that causes sharp pain.");
-      setMessages([{ role: "assistant", content: "Here is your plan, " + data.name + ". I am currently in offline mode - add your API key to get a fully personalised AI-generated plan. I am still happy to answer any fitness and nutrition questions!" }]);
+      setPlan("## Plan unavailable\nWe could not generate your personalised plan. Your profile is still available on this device. Please try again when the service is available.");
+      setMessages([{ role: "assistant", content: "The coaching service is unavailable. No personalised plan has been generated." }]);
     }
     setPhase("plan");
     setIsLoading(false);
@@ -273,14 +272,7 @@ Exercises or foods to avoid. If no conditions were reported, give general safety
       );
       setMessages([...newMessages, { role: "assistant", content: response }]);
     } catch {
-      const msg = userMsg.toLowerCase();
-      let fallback = "I am in offline mode right now but I can still help. For general fitness - consistency and progressive overload are the two most important principles. What specific aspect would you like to know more about?";
-      if (msg.includes("diet") || msg.includes("eat") || msg.includes("food")) fallback = "Great question about nutrition. Focus on whole foods, lean protein with every meal, and your local staples. Avoid heavily processed foods. What specific dietary question do you have?";
-      if (msg.includes("exercise") || msg.includes("workout") || msg.includes("train")) fallback = "For training - start with compound movements like squats, push-ups and rows. Focus on form over weight. 2-3 days per week is enough to start. What specific exercise are you asking about?";
-      if (msg.includes("pain") || msg.includes("injury") || msg.includes("hurt")) fallback = "If you are experiencing pain, please stop that exercise immediately and consult a doctor or physiotherapist before continuing. Never push through sharp pain.";
-      if (msg.includes("motivate") || msg.includes("tired") || msg.includes("give up")) fallback = "Rest days are part of the process. Progress is not always linear. The fact that you are here and asking questions puts you ahead of most people. What is making things feel difficult right now?";
-      if (msg.includes("weight") || msg.includes("lose") || msg.includes("fat")) fallback = "Weight loss comes down to a caloric deficit combined with adequate protein to preserve muscle. Focus on sustainable habits rather than extreme diets. Small consistent changes beat big short-term efforts every time.";
-      setMessages([...newMessages, { role: "assistant", content: fallback }]);
+      setMessages([...newMessages, { role: "assistant", content: "The coaching service is unavailable. Please try again later; this message has not received an AI response." }]);
     }
     setIsLoading(false);
   };
