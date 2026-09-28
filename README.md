@@ -46,6 +46,15 @@ quotas and a shared rate limiter. The current in-memory limiter is per process a
 is intended for local development. Do not deploy only the static build and expect
 AI features to work.
 
+### Existing Vercel deployment
+
+The `api/chat.mjs` and `api/location.mjs` entry points use the same validated handler
+as the local server. Set the server-only provider keys and `ALLOWED_ORIGIN` in
+Vercel environment settings. Preview deployments default to their `VERCEL_URL`
+origin when no explicit origin is configured. These adapters do not add user
+authentication or shared quotas; configure those before enabling paid-provider
+access for an unrestricted audience.
+
 ## Credential hygiene
 
 A geocoding key was previously committed. It must be revoked/rotated in Geoapify;

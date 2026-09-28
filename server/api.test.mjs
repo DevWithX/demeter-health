@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApiServer } from './index.mjs';
+import { createApiServer, createApiHandler } from './index.mjs';
 async function withServer(options, run) {
   const server = createApiServer(options);
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -53,4 +53,14 @@ test('location queries are encoded and use a server-side key', async () => {
     const response = await fetch(url + '/api/location?text=Cape%20Town');
     assert.equal(response.status, 200); assert.equal((await response.json()).features.length, 1);
   });
+});
+
+test('serverless parsed request bodies use the same validation', async () => {
+  let status; let data;
+  const handler = createApiHandler({ env: {} });
+  const response = { writeHead(code) { status = code; }, end(body) { data = JSON.parse(body); } };
+  await handler({ url: '/api/chat', method: 'POST', headers: { 'content-type': 'application/json' }, body }, response);
+  assert.equal(status, 503); assert.equal(data.error, 'Coaching is not configured.');
+  await handler({ url: '/api/chat', method: 'POST', headers: { 'content-type': 'application/json' }, body: '{broken' }, response);
+  assert.equal(status, 400);
 });
